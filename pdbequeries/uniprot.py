@@ -1,0 +1,2 @@
+"""Uniprot related queries
+"""
