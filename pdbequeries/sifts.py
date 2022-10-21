@@ -1,2 +1,0 @@
-"""Sifts related queries
-"""
