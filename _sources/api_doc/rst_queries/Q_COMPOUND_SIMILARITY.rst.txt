@@ -1,0 +1,9 @@
+.. code-block:: text
+
+   
+     MATCH
+       (c:ChemicalComponent {ID:$het_code})-[s:HAS_SIMILARITY]-
+       (other:ChemicalComponent {RELEASE_STATUS:"REL"})
+     RETURN *
+
+

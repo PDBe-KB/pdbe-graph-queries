@@ -1,8 +1,6 @@
-## Chemical compounds
+# Chemical compounds
 
-```eval_rst
-
+```{eval-rst}
 .. automodule:: pdbequeries.compounds
    :members:
-
 ```

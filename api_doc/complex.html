@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Biological use cases &mdash; PDBe graph queries 1.0 documentation</title>
+  <title>PDBe complexes &mdash; PDBe graph queries 1.0 documentation</title>
       <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
       <link rel="stylesheet" href="../_static/copybutton.css" type="text/css" />
@@ -23,8 +23,7 @@
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Complexes" href="../complexes.html" />
-    <link rel="prev" title="UniProt data" href="uniprot.html" /> 
+    <link rel="prev" title="Complexes" href="../complexes.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -44,14 +43,14 @@
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <ul class="current">
-<li class="toctree-l1 current"><a class="reference internal" href="../api.html">PDBe API documentation</a><ul class="current">
-<li class="toctree-l2"><a class="reference internal" href="compounds.html">Chemical compounds</a></li>
-<li class="toctree-l2"><a class="reference internal" href="pdb.html">PDB data</a></li>
-<li class="toctree-l2"><a class="reference internal" href="uniprot.html">UniProt data</a></li>
-<li class="toctree-l2 current"><a class="current reference internal" href="#">Biological use cases</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api.html">PDBe API documentation</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../complexes.html">Complexes</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">PDBe complexes</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#pdbequeries.complex.Q_MAKE_PDB_COMPLEX"><code class="docutils literal notranslate"><span class="pre">Q_MAKE_PDB_COMPLEX</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="../complexes.html">Complexes</a></li>
+</ul>
+</li>
 </ul>
 
         </div>
@@ -68,10 +67,10 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
-          <li><a href="../api.html">PDBe API documentation</a> &raquo;</li>
-      <li>Biological use cases</li>
+          <li><a href="../complexes.html">Complexes</a> &raquo;</li>
+      <li>PDBe complexes</li>
       <li class="wy-breadcrumbs-aside">
-            <a href="../_sources/api_doc/use_cases.md.txt" rel="nofollow"> View page source</a>
+            <a href="../_sources/api_doc/complex.md.txt" rel="nofollow"> View page source</a>
       </li>
   </ul>
   <hr/>
@@ -79,17 +78,61 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="biological-use-cases">
-<h1>Biological use cases<a class="headerlink" href="#biological-use-cases" title="Permalink to this heading"></a></h1>
-<p>This is a place for free text descrription and queries that answer certain biological questions.</p>
+  <section id="module-pdbequeries.complex">
+<span id="pdbe-complexes"></span><h1>PDBe complexes<a class="headerlink" href="#module-pdbequeries.complex" title="Permalink to this heading"></a></h1>
+<p>PDB complex related queries</p>
+<dl class="py data">
+<dt class="sig sig-object py" id="pdbequeries.complex.Q_MAKE_PDB_COMPLEX">
+<span class="sig-name descname"><span class="pre">Q_MAKE_PDB_COMPLEX</span></span><a class="headerlink" href="#pdbequeries.complex.Q_MAKE_PDB_COMPLEX" title="Permalink to this definition"></a></dt>
+<dd><p>Cypher query to find unique assemblies and make unique complexes.</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>MATCH (assembly:Assembly {PREFERED: &#39;True&#39;})&lt;-[rel:IS_PART_OF_ASSEMBLY]
+-(entity:Entity {TYPE:&#39;p&#39;})
+WITH assembly, rel, entity
+OPTIONAL MATCH (entity)-[:HAS_UNIPROT {BEST_MAPPING:&#39;1&#39;}]-&gt;(uniprot:UniProt)
+-[:HAS_TAXONOMY]-&gt;(tax:Taxonomy)
+OPTIONAL MATCH (entity)-[:HAS_RFAM]-&gt;(rfam:RfamFamily)
+WITH assembly.UNIQID AS assembly_id,
+CASE uniprot
+    WHEN null
+        THEN
+            CASE rfam
+                WHEN null
+                    THEN
+                        CASE entity.POLYMER_TYPE
+                            WHEN &#39;R&#39;
+                                THEN &#39;RNA&#39; +&#39;:UNMAPPED&#39;
+                            WHEN &#39;D&#39;
+                                THEN &#39;DNA&#39; +&#39;:UNMAPPED&#39;
+                            WHEN &#39;D/R&#39;
+                                THEN &#39;DNA/RNA&#39; +&#39;:UNMAPPED&#39;
+                            WHEN &#39;P&#39;
+                                THEN &#39;NA_&#39; +entity.UNIQID +&#39;_&#39; +rel.NUMBER_OF_CHAINS
+                        END
+                ELSE
+                    rfam.RFAM_ACC
+            END
+    ELSE uniprot.ACCESSION +&#39;_&#39; +rel.NUMBER_OF_CHAINS +&#39;_&#39; +tax.TAX_ID
+END AS accession ORDER BY accession
+WITH assembly_id AS assembly_id, COLLECT (DISTINCT accession) AS accessions
+WITH assembly_id AS assembly_id, REDUCE(s = HEAD(accessions),
+n in TAIL(accessions) | s +&#39;,&#39; +n) AS accessions
+WITH accessions, COLLECT(DISTINCT assembly_id) AS assemblies
+WITH accessions AS accessions, REDUCE(s = HEAD(assemblies),
+n in TAIL(assemblies) | s +&#39;,&#39; +n) AS assemblies
+RETURN accessions, assemblies
+</pre></div>
+</div>
+<dl class="field-list simple">
+</dl>
+</dd></dl>
+
 </section>
 
 
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="uniprot.html" class="btn btn-neutral float-left" title="UniProt data" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="../complexes.html" class="btn btn-neutral float-right" title="Complexes" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="../complexes.html" class="btn btn-neutral float-left" title="Complexes" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
     </div>
 
   <hr/>
