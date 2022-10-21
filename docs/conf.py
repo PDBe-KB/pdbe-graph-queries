@@ -16,12 +16,11 @@ import os
 from pathlib import Path
 
 import pdbequeries
-from recommonmark.transform import AutoStructify
 
 # -- Project information -----------------------------------------------------
 
 project = "PDBe graph queries"
-copyright = "2021, Protein Data Bank in Europe"
+copyright = "2022, Protein Data Bank in Europe"
 author = "Protein Data Bank in Europe"
 
 # The full version, including alpha/beta/rc tags
@@ -41,7 +40,7 @@ extensions = [
     "sphinx.ext.coverage",
     "sphinx.ext.intersphinx",
     "sphinx_copybutton",
-    "recommonmark",
+    "myst_parser",
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -76,15 +75,15 @@ add_module_names = False
 
 
 def setup(app):
-    app.add_config_value(
-        "recommonmark_config",
-        {
-            "url_resolver": lambda url: github_doc_root + url,
-            "auto_toc_tree_section": "Contents",
-        },
-        True,
-    )
-    app.add_transform(AutoStructify)
+    # app.add_config_value(
+    #     "recommonmark_config",
+    #     {
+    #         "url_resolver": lambda url: github_doc_root + url,
+    #         "auto_toc_tree_section": "Contents",
+    #     },
+    #     True,
+    # )
+    # app.add_transform(AutoStructify)
     app.connect(
         "autodoc-process-docstring",
         no_namedtuple_attrib_docstring,

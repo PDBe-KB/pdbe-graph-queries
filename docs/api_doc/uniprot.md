@@ -1,8 +1,6 @@
-## UniProt data
+# UniProt data
 
-```eval_rst
-
+```{eval-rst}
 .. automodule:: pdbequeries.uniprot
    :members:
-
 ```

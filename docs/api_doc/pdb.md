@@ -1,8 +1,6 @@
-## PDB data
+# PDB data
 
-```eval_rst
-
+```{eval-rst}
 .. automodule:: pdbequeries.pdb
    :members:
-
 ```
